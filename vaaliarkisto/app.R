@@ -3,8 +3,11 @@ library(reshape)
 library(plotly)
 library(shiny)
 library(fresh)
-library(formattable)
 library(ggplot2)
+library(reactable)
+library(scales)
+
+options(shiny.usecairo = T)
 
 keskColor = '#01954B'
 kokColor = '#006288'
@@ -28,185 +31,339 @@ kpColor = '#47C7E6'
 keColor = '#ffd700'
 iklColor = '#000008'
 
-keskFill = '#01954B64'
-kokFill = '#00628864'
-psFill = '#FFDE5564'
-sdpFill = '#E1193164' 
-vihrFill = '#61BF1A64'
-vasFill = '#F00A6464'
-sfpFill = '#FFDD9364'
-kdFill = '#18359B64'
-sinFill = '#00368064'
-liikFill = '#ae237564'
-rrFill = '#FFD60064'
-nsFill = '#3399FF64'
-smpFill = '#05317064'
-ekoFill = '#01322064'
-lkpFill = '#F1AF4464'
-skdlFill ='#BF1E2464'
-devaFill = '#8B000064'
-tpslFill = '#DA230064'
-kpFill = '#47C7E664'
-keFill = '#ffd70064'
-iklFill = '#00000864'
+labs <- c("Sosialidemokraattinen Puolue" = "SDP", "Kokoomus" = "Kok.", "Keskusta" = "Kesk.", "Perussuomalaiset" = "PS", "Vihr" = "Vihr.",
+          "Vasemmistoliitto" = "Vas.", "Ruotsalainen Kansanpuolue" = "RKP", "Kristillisdemokraatit" = "KD", "Liike Nyt" = "Liik.",
+          "RR" = "RR", "Nuorsuomalaiset" = "NuSu", "Suomen Maaseudun Puolue" = "SMP", "Eko-Vihr" = "KiPu",
+          "Liberaalinen Kansanpuolue" = "LKP", "Suomen Kansan Demokraattinen Liitto" = "SKDL", "Demokraattinen Vaihtoehto" = "DeVa",
+          "Perustuslaillinen Oikeistopuolue" = "POP", "SKYP" = "SKYP",
+          "TPSL" = "TPSL", "Suomen Kansanpuolue" = "KP", "Vapaamielisten Liitto" = "VL",
+          "Kansallinen Edistyspuolue" = "KE", "IKL" = "IKL", "PMP" = "PMP",
+          "SPP" = "SPP", "Kansanpuolue" = "Kans.", "Ruotsalainen Vasemmisto" = "RV", "STPV" = "STPV",
+          "KrTL" = "KrTL")
 
-colours <- c("Suomen Sosialidemokraattinen Puolue" = sdpColor, "Kokoomus" = kokColor, "Keskusta" = keskColor, "Perussuomalaiset" = psColor, "Vihr" = vihrColor,
+colours <- c("Sosialidemokraattinen Puolue" = sdpColor, "Kokoomus" = kokColor, "Keskusta" = keskColor, "Perussuomalaiset" = psColor, "Vihr" = vihrColor,
              "Vasemmistoliitto" = vasColor, "Ruotsalainen Kansanpuolue" = sfpColor, "Kristillisdemokraatit" = kdColor, "Liike Nyt" = liikColor,
              "RR" = rrColor, "Nuorsuomalaiset" = nsColor, "Suomen Maaseudun Puolue" = smpColor, "Eko-Vihr" = ekoColor,
-             "Liberaali Kansanpuolue" = lkpColor, "Suomen Kansan Demokraattinen Liitto" = skdlColor, "Demokraattinen Vaihtoehto" = devaColor,
+             "Liberaalinen Kansanpuolue" = lkpColor, "Suomen Kansan Demokraattinen Liitto" = skdlColor, "Demokraattinen Vaihtoehto" = devaColor,
              "Perustuslaillinen Oikeistopuolue" = "#BEBEBE", "SKYP" = "#BEBEBE",
              "TPSL" = tpslColor, "Suomen Kansanpuolue" = kpColor, "Vapaamielisten Liitto" = "#BEBEBE",
              "Kansallinen Edistyspuolue" = keColor, "IKL" = iklColor, "PMP" = "#BEBEBE",
-             "SPP" = "grey", "Kansanpuolue" = "grey", "Ruotsalainen Vasemmisto" = "#BEBEBE", "SSTP" = "#BEBEBE",
+             "SPP" = "grey", "Kansanpuolue" = "grey", "Ruotsalainen Vasemmisto" = sfpColor, "STPV" = "#BEBEBE",
              "KrTL" = "#BEBEBE")
 
-# Define UI for application that draws a histogram
 ui <- fluidPage(
 
     theme="style.css",
     use_googlefont("Philosopher"),
-    # Application title
+
     titlePanel("Suomen vaaliarkisto"),
 
-    # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
+            
+            conditionalPanel(
+                condition = "input.datamuoto == 'graph'",
+            radioButtons("grafiikkamuoto",
+                         h3("Grafiikan muoto"),
+                         choices = list(
+                             "Kannatushistoria" = "history",
+                             "Vaaleittain" = "election"
+                             ),
+                         selected = c("history")
+                         )
+            ),
+            
+            radioButtons("resulttype",
+                         h3("Tulokset"),
+                         choices = list(
+                             "Kannatus (%)" = "Kannatus (%)",
+                             "Paikat" = "Paikat"
+                             ),
+                         selected = c("Kannatus (%)")
+                         ),
+            
+            radioButtons("vaalityyppi",
+                         h3("Vaalityyppi"),
+                         choices = list(
+                             "Eduskuntavaalit" = "Eduskuntavaalit",
+                             "Europarlamenttivaalit" = "Europarlamenttivaalit"
+                             ),
+                         selected = c("Eduskuntavaalit")
+                         ),
+            
+            conditionalPanel(
+                condition = "input.datamuoto == 'graph' && input.grafiikkamuoto == 'election' && input.vaalityyppi == 'Eduskuntavaalit'",
+                selectInput("electionyear", h3("Vaalivuosi"),
+                                               choices = list(
+                                                   "2019" = 2019,
+                                                   "2015" = 2015,
+                                                   "2011" = 2011,
+                                                   "2007" = 2007,
+                                                   "2003" = 2003,
+                                                   "1999" = 1999,
+                                                   "1995" = 1995,
+                                                   "1991" = 1991,
+                                                   "1987" = 1987,
+                                                   "1983" = 1983,
+                                                   "1979" = 1979,
+                                                   "1975" = 1975,
+                                                   "1972" = 1972,
+                                                   "1970" = 1970,
+                                                   "1966" = 1966,
+                                                   "1962" = 1962,
+                                                   "1958" = 1958,
+                                                   "1954" = 1954,
+                                                   "1951" = 1951,
+                                                   "1948" = 1948,
+                                                   "1945" = 1945,
+                                                   "1939" = 1939,
+                                                   "1936" = 1936,
+                                                   "1933" = 1933,
+                                                   "1930" = 1930,
+                                                   "1929" = 1929,
+                                                   "1927" = 1927,
+                                                   "1924" = 1924,
+                                                   "1922" = 1922,
+                                                   "1919" = 1919
+                                               ),
+                            selected = 2019
+                            )
+                ),
+            
+            conditionalPanel(
+                condition = "input.datamuoto == 'graph' && input.grafiikkamuoto == 'election' && input.vaalityyppi == 'Europarlamenttivaalit'",
+                selectInput("electionyear2", h3("Vaalivuosi"),
+                            choices = list(
+                                "2019" = 2019,
+                                "2014" = 2014,
+                                "2009" = 2009,
+                                "2004" = 2004,
+                                "1999" = 1999,
+                                "1996" = 1996
+                            ),
+                            selected = 2019
+                )
+            ),
+
+            
+            conditionalPanel(
+                condition = "input.vaalityyppi == 'Eduskuntavaalit' && input.grafiikkamuoto == 'history'",
+                sliderInput("Vuosi",
+                            h3("Vuodet"),
+                            min=1919,
+                            max=2019,
+                            value=c(1919, 2019),
+                            sep=""
+                            )
+                ),
+            
+            conditionalPanel(
+                condition = "input.vaalityyppi == 'Europarlamenttivaalit' && input.grafiikkamuoto == 'history'",
+                sliderInput("Vuosi2",
+                            h3("Vuodet"),
+                            min=1996,
+                            max=2019,
+                            value=c(1996, 2019),
+                            sep=""
+                            )
+                ),
             
             radioButtons("datamuoto",
                          h3("Datan muoto"),
                          choices = list(
                              "Graafi" = "graph",
                              "Taulukko" = "table"
-                         ),
+                             ),
                          selected = c("graph")
-            ),
-            
-            # conditionalPanel(condition = "input.datamuoto == 'graph'",
-            #                  radioButtons("grafiikkamuoto",
-            #                               h3("Grafiikan muoto"),
-            #                               choices = list(
-            #                                   "Kannatushistoria" = "eduskunta",
-            #                                   "Vaaleittain" = "euro"
-            #                               ),
-            #                               selected = c("eduskunta")
-            #                  )
-            #                  ),
-            
-            radioButtons("vaalityyppi",
-                               h3("Vaalit"),
-                               choices = list(
-                                   "Eduskuntavaalit" = "eduskunta",
-                                   "Eurovaalit" = "euro"
-                               ),
-                               selected = c("eduskunta")
-                         ),
-            
-            conditionalPanel(
-                condition = "input.vaalityyppi == 'eduskunta'",
-                sliderInput("vuosi",
-                    h3("Vuodet"),
-                    min=1919,
-                    max=2019,
-                    value=c(1919, 2019),
-                    sep=""
-                        )),
-            
-            conditionalPanel(
-                condition = "input.vaalityyppi == 'euro'",
-                sliderInput("vuosi2",
-                            h3("Vuodet"),
-                            min=1996,
-                            max=2019,
-                            value=c(1996, 2019),
-                            sep=""
-                ))
+                         )
             ),
 
         mainPanel(
-            conditionalPanel(condition = "input.datamuoto == 'graph'",
+            conditionalPanel(condition = "input.datamuoto == 'graph' && input.grafiikkamuoto == 'history'",
                              plotlyOutput("history")
                              ),
+            
+            conditionalPanel(condition = "input.datamuoto == 'graph' && input.grafiikkamuoto == 'election'",
+                             conditionalPanel(condition = "input.vaalityyppi == 'Eduskuntavaalit'",
+                                              htmlOutput("selected_elections")
+                             ),
+                             conditionalPanel(condition = "input.vaalityyppi == 'Europarlamenttivaalit'",
+                                              htmlOutput("selected_elections2")
+                             ),
+                             htmlOutput("selected_results"),
+                             plotOutput("election")
+                             ),
+            
             conditionalPanel(condition = "input.datamuoto == 'table'",
-                             formattableOutput("taulukko"))
+                             reactableOutput("taulukko")
+                             )
         )
     )
 )
 
-# Define server logic required to draw a histogram
 server <- function(input, output) {
+    
+    output$selected_elections <- renderText({ 
+        paste("<h2>", input$vaalityyppi, input$electionyear,"</h2>")
+    })
+    
+    output$selected_elections2 <- renderText({ 
+        paste("<h2>", input$vaalityyppi, input$electionyear2,"</h2>")
+    })
+    
+    output$selected_results <- renderText({ 
+        paste("<h3>", input$resulttype,"</h3>")
+    })
 
     output$history <- renderPlotly({
         
-        df <- as.data.frame(read.csv("data/vaaliarkisto.csv", dec = ".", check.names = F, na.strings = c("", 0), encoding = "UTF-8"))
+        df <- as.data.frame(read.csv("data/vaaliarkisto.csv", dec = ".", check.names = F, encoding = "UTF-8"))
         
-        df2 <- subset(df, type==input$vaalityyppi[1] | type==input$vaalityyppi[2])
+        df2 <- subset(df, type==input$vaalityyppi[1])
+        df2 <- subset(df2, result==input$resulttype[1])
         
-        molten.df <- melt(df2, id=c("Vuosi", "type", "votes", "seats"))
+        df2 <- switch(input$vaalityyppi,
+                      "Eduskuntavaalit" = subset(df2, Vuosi>=input$Vuosi[1]),
+                      "Europarlamenttivaalit" = subset(df2, Vuosi>=input$Vuosi2[1])
+                      )
         
-        years <- switch(input$vaalityyppi,
-            "eduskunta" = c(input$vuosi[1]-1, input$vuosi[2]+1),
-            "euro" = c(input$vuosi2[1]-1, input$vuosi2[2]+1)
+        df2 <- switch(input$vaalityyppi,
+                      "Eduskuntavaalit" = subset(df2, Vuosi<=input$Vuosi[2]),
+                      "Europarlamenttivaalit" = subset(df2, Vuosi<=input$Vuosi2[2])
+        )
+        
+        molten.df <- melt(df2, id=c("Vuosi", "type", "result"))
+        
+        Vuosi <- switch(input$vaalityyppi,
+            "Eduskuntavaalit" = c(input$Vuosi[1]-1, input$Vuosi[2]+1),
+            "Europarlamenttivaalit" = c(input$Vuosi2[1]-1, input$Vuosi2[2]+1)
             )
         
+        vaalit <- switch(input$vaalityyppi,
+                      "Eduskuntavaalit" = c(0,90),
+                      "Europarlamenttivaalit" = c(0,5)
+        )
+        
+        range <- switch(input$resulttype,
+                        "Kannatus (%)" = list(ticksuffix = " %", title=""),
+                        "Paikat" = list(title="", range=vaalit)
+        )
+    
+        
         plot_ly(data=molten.df, mode="lines+markers", type="scatter", x = ~Vuosi, y = ~value, color= ~variable, colors=colours, text = ~variable, marker=list(size=8), height=600) %>%
-            layout(hovermode="x unified",
+            layout(hovermode="closest",
                    margin = list(l=0, r=0, t= 0, b=0, pad=5),
                    showlegend = T,
                    title = list(text = "",
-                                font = list(family="Advent Pro", size=40), x=0),
+                                font = list(family="Philosopher", size=40), x=0),
                    legend = list(y=-0.1, orientation = "h",
-                                 font=list(family="Advent Pro"),
+                                 font=list(family="Philosopher"),
                                  title = list(text = "",
                                               font = list(size=20, family="Advent Pro"))),
-                   yaxis = list(ticksuffix = "%", title="", range=c(0,42)),
-                   xaxis = list(title="", range=years, dtick=10)
+                   yaxis = range,
+                   xaxis = list(title="", range=Vuosi)
                    ) %>%
             config(displayModeBar = F)
     })
     
-    output$taulukko <- renderFormattable({
+    output$election <- renderPlot({
         
-        df <- as.data.frame(read.csv("data/vaaliarkisto.csv", dec = ".", check.names = F, na.strings = c(""), encoding = "UTF-8"))
+        df <- as.data.frame(read.csv("data/vaaliarkisto.csv", dec = ".", check.names = F, encoding = "UTF-8"))
         
-        df2 <- subset(df, type==input$vaalityyppi[1] | type==input$vaalityyppi[2])
+        df2 <- subset(df, type==input$vaalityyppi[1])
+        df2 <- subset(df2, result==input$resulttype[1])
         
         df2 <- switch(input$vaalityyppi,
-                      "eduskunta" = subset(df2, Vuosi >= input$vuosi[1] & Vuosi <= input$vuosi[2]),
-                      "euro" = subset(df2, Vuosi >= input$vuosi2[1] & Vuosi <= input$vuosi2[2])
+                      "Eduskuntavaalit" = subset(df2, Vuosi==input$electionyear[1]),
+                      "Europarlamenttivaalit" = subset(df2, Vuosi==input$electionyear2[1])
+        )
+        
+        molten.df <- melt(df2, id=c("Vuosi", "type", "result"))
+        newdf <- cast(molten.df, variable~Vuosi, value="value")
+        colnames(newdf) <- c("variable", "year")
+        newdf <- subset(newdf, year!=0)
+        newdf <- na.omit(newdf)
+        
+        scale <- switch(input$resulttype,
+                      "Kannatus (%)" = scale_y_continuous(breaks = seq(0,100,5), minor_breaks = seq(0,100,1)),
+                      "Paikat" = scale_y_continuous(breaks = seq(0,100,10), minor_breaks = seq(0,100,2))
+        )
+        
+        ggplot(newdf, aes(x=reorder(variable, year), y=year))+
+            geom_col(aes(fill=variable), alpha=0.9)+
+            geom_label(aes(label=year), size=5)+
+            xlab("")+
+            ylab("")+
+            scale+
+            scale_x_discrete(labels=labs)+
+            scale_fill_manual(values = colours)+
+            coord_flip()+
+            theme_minimal()+
+            theme(plot.title = element_text(color="black", size=40, family="Philosopher"))+
+            theme(plot.subtitle = element_text(color="darkgrey", size=30, family="Philosopher"))+
+            theme(text=element_text(color="black", family="Philosopher", size=30))+
+            theme(legend.position = "none")+
+            theme(plot.caption=element_text(hjust = 0.98, vjust = 1))+
+            theme(plot.margin = margin(10,20,10,10))+
+            theme(panel.grid.major.y = element_blank())+
+            theme(panel.grid.major.x = element_line(colour = "darkgrey"))
+    })
+    
+    output$taulukko <- renderReactable({
+        
+        df <- as.data.frame(read.csv("data/vaaliarkisto.csv", dec = ".", check.names = F, na.strings = c(""), encoding = "UTF-8"))
+        head(df)
+        names(df)[4] <- "Sosialidemo-kraattinen Puolue"
+        names(df)[5] <- "Perus-suomalaiset"
+        names(df)[8] <- "Vihreät"
+        names(df)[9] <- "Vasemmisto-liitto"
+        names(df)[10] <- "Ruotsalainen Kansan-puolue"
+        names(df)[11] <- "Kristillis-demokraatit"
+        names(df)[13] <- "Remontti-ryhmä"
+        names(df)[14] <- "Nuor-suomalaiset"
+        names(df)[16] <- "Kirjava ”Puolue” – Elonkehän Puolesta"
+        names(df)[17] <- "Liberaalinen Kansan-puolue"
+        names(df)[18] <- "Suomen Kansan-demokraat-tinen Puolue"
+        names(df)[19] <- "Demokraat-tinen Vaihtoehto"
+        names(df)[20] <- "Perustus-laillinen Oikeisto-puolue"
+        names(df)[21] <- "Suomen Kansan Yhtenäi-syyden Puolue"
+        names(df)[22] <- "Työväen ja Pienviljelijäin Sosialidemo-kraattinen Liitto"
+        names(df)[23] <- "Suomen Kansan-puolue"
+        names(df)[24] <- "Vapaa-mielisten Liitto"
+        names(df)[25] <- "Kansallinen Edistys-puolue"
+        names(df)[26] <- "Isänmaallinen kansanliike"
+        names(df)[27] <- "Pienviljelijäin ja maalais-kansan puolue"
+        names(df)[28] <- "Suomen pienviljelijäin puolue"
+        names(df)[29] <- "Kansan-puolue"
+        names(df)[31] <- "Sosialistinen työväen ja pien-viljelijöiden vaalijärjestö"
+        names(df)[32] <- "Kristillisen Työväen Liitto"
+        head(df)
+        
+        df2 <- subset(df, type==input$vaalityyppi[1] | type==input$vaalityyppi[2])
+        df2 <- subset(df2, result==input$resulttype[1] | result==input$resulttype[2])
+        
+        df2 <- switch(input$vaalityyppi,
+                      "Eduskuntavaalit" = subset(df2, Vuosi >= input$Vuosi[1] & Vuosi <= input$Vuosi[2]),
+                      "Europarlamenttivaalit" = subset(df2, Vuosi >= input$Vuosi2[1] & Vuosi <= input$Vuosi2[2])
                       )
-        df2 <- df2[,c(1,5:33)]
+        
+        df2 <- df2[,c(1,4:32)]
         df2 <- df2[, colSums(is.na(df2)) != nrow(df2)]
         
-        formattable(df2, align= c("l", rep("l", ncol(df2)-1)),
-                    list(`Suomen Sosialidemokraattinen Puolue` = color_tile("transparent", sdpFill),
-                         `Perussuomalaiset` = color_tile("transparent", psFill),
-                         `Kokoomus` = color_tile("transparent", kokFill),
-                         `Keskusta` = color_tile("transparent", keskFill),
-                         `Vihr` = color_tile("transparent", vihrFill),
-                         `Vasemmistoliitto` = color_tile("transparent", vasFill),
-                         `Ruotsalainen Kansanpuolue` = color_tile("transparent", sfpFill),
-                         `Kristillisdemokraatit` = color_tile("transparent", kdFill),
-                         `Liike Nyt` = color_tile("transparent", liikFill),
-                         `RR` = color_tile("transparent", rrFill),
-                         `Nuorsuomalaiset` = color_tile("transparent", nsFill),
-                         `Suomen Maaseudun Puolue` = color_tile("transparent", smpFill),
-                         `Eko-Vihr` = color_tile("transparent", ekoFill),
-                         `Liberaali Kansanpuolue` = color_tile("transparent", lkpFill),
-                         `Suomen Kansan Demokraattinen Liitto` = color_tile("transparent", skdlFill),
-                         `Demokraattinen Vaihtoehto` = color_tile("transparent", devaFill),
-                         `Perustuslaillinen Oikeistopuolue` = color_tile("transparent", "#BEBEBE16"),
-                         `SKYP` = color_tile("transparent", "#BEBEBE16"),
-                         `TPSL` = color_tile("transparent", "#BEBEBE16"),
-                         `Suomen Kansanpuolue` = color_tile("transparent", "#BEBEBE16"),
-                         `Vapaamielisten Liitto` = color_tile("transparent", "#BEBEBE16"),
-                         `Kansallinen Edistyspuolue` = color_tile("transparent", keFill),
-                         `IKL` = color_tile("transparent", iklFill),
-                         `PMP` = color_tile("transparent", "#BEBEBE16"),
-                         `SPP` = color_tile("transparent", "#BEBEBE16"),
-                         `Kansanpuolue` = color_tile("transparent", "#BEBEBE16"),
-                         `Ruotsalainen Vasemmisto` = color_tile("transparent", "#BEBEBE16"),
-                         `SSTP` = color_tile("transparent", "#BEBEBE16"),
-                         `KrTL` = color_tile("transparent", "#BEBEBE16")))
+        reactable(df2,
+                  defaultColDef = colDef(sortNALast = TRUE, align = "center"),
+                  bordered = T,
+                  height = 600,
+                  pagination = F,
+                  striped = T,
+                  compact = T,
+                  columns = list(
+                      Vuosi = colDef(
+                          style = list(position = "sticky", background = "#fff", zIndex = 1, borderRight = "1px solid #eee"),
+                          headerStyle = list(position = "sticky", background = "#fff", zIndex = 1, borderRight = "1px solid #eee")
+                          )
+                      )
+                  )
         
     })
 }
