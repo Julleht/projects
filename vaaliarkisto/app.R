@@ -7,7 +7,9 @@ library(ggplot2)
 library(reactable)
 library(scales)
 
-options(shiny.usecairo = T)
+dir.create('~/.fonts')
+file.copy("www/Philosopher.ttf", "~/.fonts")
+system('fc-cache -f ~/.fonts')
 
 keskColor = '#01954B'
 kokColor = '#006288'
@@ -33,7 +35,7 @@ iklColor = '#000008'
 
 labs <- c("Sosialidemokraattinen Puolue" = "SDP", "Kokoomus" = "Kok.", "Keskusta" = "Kesk.", "Perussuomalaiset" = "PS", "Vihr" = "Vihr.",
           "Vasemmistoliitto" = "Vas.", "Ruotsalainen Kansanpuolue" = "RKP", "Kristillisdemokraatit" = "KD", "Liike Nyt" = "Liik.",
-          "RR" = "RR", "Nuorsuomalaiset" = "NuSu", "Suomen Maaseudun Puolue" = "SMP", "Eko-Vihr" = "KiPu",
+          "Remontti" = "Remontti", "Nuorsuomalaiset" = "NuSu", "Suomen Maaseudun Puolue" = "SMP", "Kirjava Puolue" = "KiPu",
           "Liberaalinen Kansanpuolue" = "LKP", "Suomen Kansan Demokraattinen Liitto" = "SKDL", "Demokraattinen Vaihtoehto" = "DeVa",
           "Perustuslaillinen Oikeistopuolue" = "POP", "SKYP" = "SKYP",
           "TPSL" = "TPSL", "Suomen Kansanpuolue" = "KP", "Vapaamielisten Liitto" = "VL",
@@ -43,7 +45,7 @@ labs <- c("Sosialidemokraattinen Puolue" = "SDP", "Kokoomus" = "Kok.", "Keskusta
 
 colours <- c("Sosialidemokraattinen Puolue" = sdpColor, "Kokoomus" = kokColor, "Keskusta" = keskColor, "Perussuomalaiset" = psColor, "Vihr" = vihrColor,
              "Vasemmistoliitto" = vasColor, "Ruotsalainen Kansanpuolue" = sfpColor, "Kristillisdemokraatit" = kdColor, "Liike Nyt" = liikColor,
-             "RR" = rrColor, "Nuorsuomalaiset" = nsColor, "Suomen Maaseudun Puolue" = smpColor, "Eko-Vihr" = ekoColor,
+             "Remontti" = rrColor, "Nuorsuomalaiset" = nsColor, "Suomen Maaseudun Puolue" = smpColor, "Kirjava Puolue" = ekoColor,
              "Liberaalinen Kansanpuolue" = lkpColor, "Suomen Kansan Demokraattinen Liitto" = skdlColor, "Demokraattinen Vaihtoehto" = devaColor,
              "Perustuslaillinen Oikeistopuolue" = "#BEBEBE", "SKYP" = "#BEBEBE",
              "TPSL" = tpslColor, "Suomen Kansanpuolue" = kpColor, "Vapaamielisten Liitto" = "#BEBEBE",
@@ -76,10 +78,10 @@ ui <- fluidPage(
             radioButtons("resulttype",
                          h3("Tulokset"),
                          choices = list(
-                             "Kannatus (%)" = "Kannatus (%)",
+                             "Kannatus" = "Kannatus",
                              "Paikat" = "Paikat"
                              ),
-                         selected = c("Kannatus (%)")
+                         selected = c("Kannatus")
                          ),
             
             radioButtons("vaalityyppi",
@@ -245,13 +247,13 @@ server <- function(input, output) {
         )
         
         range <- switch(input$resulttype,
-                        "Kannatus (%)" = list(ticksuffix = " %", title=""),
-                        "Paikat" = list(title="", range=vaalit)
+                        "Kannatus" = list(ticksuffix = " %", title="", fixedrange=T),
+                        "Paikat" = list(title="", range=vaalit, fixedrange=T)
         )
     
         
-        plot_ly(data=molten.df, mode="lines+markers", type="scatter", x = ~Vuosi, y = ~value, color= ~variable, colors=colours, text = ~variable, marker=list(size=8), height=600) %>%
-            layout(hovermode="closest",
+        plot_ly(data=molten.df, mode="lines+markers", type="scatter", x = ~Vuosi, y = ~value, color= ~variable, colors=colours, text = ~variable, marker=list(size=8), height=650) %>%
+            layout(hovermode="closest", dragmode=F,
                    margin = list(l=0, r=0, t= 0, b=0, pad=5),
                    showlegend = T,
                    title = list(text = "",
@@ -261,7 +263,7 @@ server <- function(input, output) {
                                  title = list(text = "",
                                               font = list(size=20, family="Advent Pro"))),
                    yaxis = range,
-                   xaxis = list(title="", range=Vuosi)
+                   xaxis = list(title="", range=Vuosi, fixedrange=T)
                    ) %>%
             config(displayModeBar = F)
     })
@@ -285,13 +287,18 @@ server <- function(input, output) {
         newdf <- na.omit(newdf)
         
         scale <- switch(input$resulttype,
-                      "Kannatus (%)" = scale_y_continuous(breaks = seq(0,100,5), minor_breaks = seq(0,100,1)),
+                      "Kannatus" = scale_y_continuous(breaks = seq(0,100,5), minor_breaks = seq(0,100,1), limits=c(-1,(max(newdf$year)+2)), labels=scales::percent_format(accuracy = 1, suffix=" %", scale=1)),
                       "Paikat" = scale_y_continuous(breaks = seq(0,100,10), minor_breaks = seq(0,100,2))
+        )
+        
+        label <- switch(input$resulttype,
+                        "Kannatus" = geom_label(aes(label=scales::percent(year, accuracy = 0.1, suffix=" %", scale=1)), size=5),
+                        "Paikat" = geom_label(aes(label=year), size=5, nudge_y = )
         )
         
         ggplot(newdf, aes(x=reorder(variable, year), y=year))+
             geom_col(aes(fill=variable), alpha=0.9)+
-            geom_label(aes(label=year), size=5)+
+            label+
             xlab("")+
             ylab("")+
             scale+
@@ -301,10 +308,10 @@ server <- function(input, output) {
             theme_minimal()+
             theme(plot.title = element_text(color="black", size=40, family="Philosopher"))+
             theme(plot.subtitle = element_text(color="darkgrey", size=30, family="Philosopher"))+
-            theme(text=element_text(color="black", family="Philosopher", size=30))+
+            theme(text=element_text(color="black", family="Philosopher", size=26))+
             theme(legend.position = "none")+
             theme(plot.caption=element_text(hjust = 0.98, vjust = 1))+
-            theme(plot.margin = margin(10,20,10,10))+
+            theme(plot.margin = margin(10,10,10,10))+
             theme(panel.grid.major.y = element_blank())+
             theme(panel.grid.major.x = element_line(colour = "darkgrey"))
     })
@@ -350,8 +357,13 @@ server <- function(input, output) {
         df2 <- df2[,c(1,4:32)]
         df2 <- df2[, colSums(is.na(df2)) != nrow(df2)]
         
+        coldefs <- switch(input$resulttype,
+            "Kannatus" = colDef(sortNALast = TRUE, align = "center", format = colFormat(suffix = " %")),
+            "Paikat" = colDef(sortNALast = TRUE, align = "center")
+        )
+        
         reactable(df2,
-                  defaultColDef = colDef(sortNALast = TRUE, align = "center"),
+                  defaultColDef = coldefs,
                   bordered = T,
                   height = 600,
                   pagination = F,
@@ -360,7 +372,8 @@ server <- function(input, output) {
                   columns = list(
                       Vuosi = colDef(
                           style = list(position = "sticky", background = "#fff", zIndex = 1, borderRight = "1px solid #eee"),
-                          headerStyle = list(position = "sticky", background = "#fff", zIndex = 1, borderRight = "1px solid #eee")
+                          headerStyle = list(position = "sticky", background = "#fff", zIndex = 1, borderRight = "1px solid #eee"),
+                          format = colFormat(suffix = "")
                           )
                       )
                   )
