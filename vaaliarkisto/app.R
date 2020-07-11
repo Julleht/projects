@@ -1,3 +1,4 @@
+# declaring libraries
 library(extrafont)
 library(reshape)
 library(plotly)
@@ -7,10 +8,12 @@ library(ggplot2)
 library(reactable)
 library(scales)
 
+#setting up custom font directory
 dir.create('~/.fonts')
 file.copy("www/Philosopher.ttf", "~/.fonts")
 system('fc-cache -f ~/.fonts')
 
+# declaring colours
 keskColor = '#01954B'
 kokColor = '#006288'
 psColor = '#FFDE55'
@@ -32,27 +35,74 @@ tpslColor = '#DA2300'
 kpColor = '#47C7E6'
 keColor = '#ffd700'
 iklColor = '#000008'
+iklkokColor = 'black'
 
-labs <- c("Sosialidemokraattinen Puolue" = "SDP", "Kokoomus" = "Kok.", "Keskusta" = "Kesk.", "Perussuomalaiset" = "PS", "Vihr" = "Vihr.",
-          "Vasemmistoliitto" = "Vas.", "Ruotsalainen Kansanpuolue" = "RKP", "Kristillisdemokraatit" = "KD", "Liike Nyt" = "Liik.",
-          "Remontti" = "Remontti", "Nuorsuomalaiset" = "NuSu", "Suomen Maaseudun Puolue" = "SMP", "Kirjava Puolue" = "KiPu",
-          "Liberaalinen Kansanpuolue" = "LKP", "Suomen Kansan Demokraattinen Liitto" = "SKDL", "Demokraattinen Vaihtoehto" = "DeVa",
-          "Perustuslaillinen Oikeistopuolue" = "POP", "SKYP" = "SKYP",
-          "TPSL" = "TPSL", "Suomen Kansanpuolue" = "KP", "Vapaamielisten Liitto" = "VL",
-          "Kansallinen Edistyspuolue" = "KE", "IKL" = "IKL", "PMP" = "PMP",
-          "SPP" = "SPP", "Kansanpuolue" = "Kans.", "Ruotsalainen Vasemmisto" = "RV", "STPV" = "STPV",
-          "KrTL" = "KrTL")
+colours <- c("Sosialidemokraattinen Puolue" = sdpColor,
+             "Kokoomus" = kokColor,
+             "Keskusta" = keskColor,
+             "Perussuomalaiset" = psColor,
+             "Vihr" = vihrColor,
+             "Vasemmistoliitto" = vasColor,
+             "Ruotsalainen Kansanpuolue" = sfpColor,
+             "Kristillisdemokraatit" = kdColor,
+             "Liike Nyt" = liikColor,
+             "Remontti" = rrColor,
+             "Nuorsuomalaiset" = nsColor,
+             "Suomen Maaseudun Puolue" = smpColor,
+             "Kirjava Puolue" = ekoColor,
+             "Liberaalinen Kansanpuolue" = lkpColor,
+             "Suomen Kansan Demokraattinen Liitto" = skdlColor,
+             "Demokraattinen Vaihtoehto" = devaColor,
+             "Perustuslaillinen Oikeistopuolue" = "#BEBEBE",
+             "SKYP" = "#BEBEBE",
+             "TPSL" = tpslColor,
+             "Suomen Kansanpuolue" = kpColor,
+             "Vapaamielisten Liitto" = "#BEBEBE",
+             "Kansallinen Edistyspuolue" = keColor,
+             "IKL" = iklColor,
+             "IKL + Kok." = iklkokColor,
+             "PMP" = "#BEBEBE",
+             "SPP" = "grey",
+             "Kansanpuolue" = "grey",
+             "Ruotsalainen Vasemmisto" = sfpColor,
+             "STPV" = "#BEBEBE",
+             "KrTL" = "#BEBEBE"
+)
 
-colours <- c("Sosialidemokraattinen Puolue" = sdpColor, "Kokoomus" = kokColor, "Keskusta" = keskColor, "Perussuomalaiset" = psColor, "Vihr" = vihrColor,
-             "Vasemmistoliitto" = vasColor, "Ruotsalainen Kansanpuolue" = sfpColor, "Kristillisdemokraatit" = kdColor, "Liike Nyt" = liikColor,
-             "Remontti" = rrColor, "Nuorsuomalaiset" = nsColor, "Suomen Maaseudun Puolue" = smpColor, "Kirjava Puolue" = ekoColor,
-             "Liberaalinen Kansanpuolue" = lkpColor, "Suomen Kansan Demokraattinen Liitto" = skdlColor, "Demokraattinen Vaihtoehto" = devaColor,
-             "Perustuslaillinen Oikeistopuolue" = "#BEBEBE", "SKYP" = "#BEBEBE",
-             "TPSL" = tpslColor, "Suomen Kansanpuolue" = kpColor, "Vapaamielisten Liitto" = "#BEBEBE",
-             "Kansallinen Edistyspuolue" = keColor, "IKL" = iklColor, "PMP" = "#BEBEBE",
-             "SPP" = "grey", "Kansanpuolue" = "grey", "Ruotsalainen Vasemmisto" = sfpColor, "STPV" = "#BEBEBE",
-             "KrTL" = "#BEBEBE")
+# declaring labels
+labs <- c("Sosialidemokraattinen Puolue" = "SDP",
+          "Kokoomus" = "Kok.",
+          "Keskusta" = "Kesk.",
+          "Perussuomalaiset" = "PS",
+          "Vihr" = "Vihr.",
+          "Vasemmistoliitto" = "Vas.",
+          "Ruotsalainen Kansanpuolue" = "RKP",
+          "Kristillisdemokraatit" = "KD",
+          "Liike Nyt" = "Liik.",
+          "Remontti" = "Remontti",
+          "Nuorsuomalaiset" = "NuSu",
+          "Suomen Maaseudun Puolue" = "SMP",
+          "Kirjava Puolue" = "KiPu",
+          "Liberaalinen Kansanpuolue" = "LKP",
+          "Suomen Kansan Demokraattinen Liitto" = "SKDL",
+          "Demokraattinen Vaihtoehto" = "DeVa",
+          "Perustuslaillinen Oikeistopuolue" = "POP",
+          "SKYP" = "SKYP",
+          "TPSL" = "TPSL",
+          "Suomen Kansanpuolue" = "KP",
+          "Vapaamielisten Liitto" = "VL",
+          "Kansallinen Edistyspuolue" = "KE",
+          "IKL" = "IKL",
+          "IKL + Kok." = "IKL + Kokoomus",
+          "PMP" = "PMP",
+          "SPP" = "SPP",
+          "Kansanpuolue" = "Kans.",
+          "Ruotsalainen Vasemmisto" = "RV",
+          "STPV" = "STPV",
+          "KrTL" = "KrTL"
+          )
 
+# user interface
 ui <- fluidPage(
 
     theme="style.css",
@@ -203,6 +253,7 @@ ui <- fluidPage(
     )
 )
 
+# backend
 server <- function(input, output) {
     
     output$selected_elections <- renderText({ 
@@ -217,6 +268,7 @@ server <- function(input, output) {
         paste("<h3>", input$resulttype,"</h3>")
     })
 
+    # party history graph
     output$history <- renderPlotly({
         
         df <- as.data.frame(read.csv("data/vaaliarkisto.csv", dec = ".", check.names = F, encoding = "UTF-8"))
@@ -268,6 +320,7 @@ server <- function(input, output) {
             config(displayModeBar = F)
     })
     
+    # election graph
     output$election <- renderPlot({
         
         df <- as.data.frame(read.csv("data/vaaliarkisto.csv", dec = ".", check.names = F, encoding = "UTF-8"))
@@ -316,6 +369,7 @@ server <- function(input, output) {
             theme(panel.grid.major.x = element_line(colour = "darkgrey"))
     })
     
+    # table
     output$taulukko <- renderReactable({
         
         df <- as.data.frame(read.csv("data/vaaliarkisto.csv", dec = ".", check.names = F, na.strings = c(""), encoding = "UTF-8"))
@@ -339,11 +393,12 @@ server <- function(input, output) {
         names(df)[24] <- "Vapaa-mielisten Liitto"
         names(df)[25] <- "Kansallinen Edistys-puolue"
         names(df)[26] <- "Isänmaallinen kansanliike"
-        names(df)[27] <- "Pienviljelijäin ja maalais-kansan puolue"
-        names(df)[28] <- "Suomen pienviljelijäin puolue"
-        names(df)[29] <- "Kansan-puolue"
-        names(df)[31] <- "Sosialistinen työväen ja pien-viljelijöiden vaalijärjestö"
-        names(df)[32] <- "Kristillisen Työväen Liitto"
+        names(df)[27] <- "Isänmaallinen kansanliike + Kokoomus"
+        names(df)[28] <- "Pienviljelijäin ja maalais-kansan puolue"
+        names(df)[29] <- "Suomen pienviljelijäin puolue"
+        names(df)[30] <- "Kansan-puolue"
+        names(df)[32] <- "Sosialistinen työväen ja pien-viljelijöiden vaalijärjestö"
+        names(df)[33] <- "Kristillisen Työväen Liitto"
         head(df)
         
         df2 <- subset(df, type==input$vaalityyppi[1] | type==input$vaalityyppi[2])
