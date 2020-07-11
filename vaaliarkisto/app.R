@@ -365,14 +365,14 @@ server <- function(input, output) {
         reactable(df2,
                   defaultColDef = coldefs,
                   bordered = T,
-                  height = 600,
+                  height = "auto",
                   pagination = F,
                   striped = T,
                   compact = T,
                   columns = list(
                       Vuosi = colDef(
-                          style = list(position = "sticky", background = "#fff", zIndex = 1, borderRight = "1px solid #eee"),
-                          headerStyle = list(position = "sticky", background = "#fff", zIndex = 1, borderRight = "1px solid #eee"),
+                          style = list(position = "sticky", left=0, background = "#fff", zIndex = 1, borderRight = "1px solid #eee"),
+                          headerStyle = list(position = "sticky", left=0, background = "#fff", zIndex = 1, borderRight = "1px solid #eee"),
                           format = colFormat(suffix = "")
                           )
                       )
