@@ -93,7 +93,7 @@ labs <- c("Sosialidemokraattinen Puolue" = "SDP",
           "Vapaamielisten Liitto" = "VL",
           "Kansallinen Edistyspuolue" = "KE",
           "IKL" = "IKL",
-          "IKL + Kok." = "IKL + Kokoomus",
+          "IKL + Kok." = "IKL + Kok.",
           "PMP" = "PMP",
           "SPP" = "SPP",
           "Kansanpuolue" = "Kans.",
@@ -105,10 +105,11 @@ labs <- c("Sosialidemokraattinen Puolue" = "SDP",
 # user interface
 ui <- fluidPage(
 
-    theme="style.css",
+    tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "style.css")),
+    
     use_googlefont("Philosopher"),
 
-    titlePanel("Suomen vaaliarkisto"),
+    titlePanel(h1("Suomen vaaliarkisto"), windowTitle = "Suomen vaaliarkisto"),
 
     sidebarLayout(
         sidebarPanel(
@@ -227,7 +228,10 @@ ui <- fluidPage(
                              "Taulukko" = "table"
                              ),
                          selected = c("graph")
-                         )
+                         ),
+            
+            helpText(HTML("Avoin lähdekoodi <a href='https://github.com/Julleht/projects/tree/master/vaaliarkisto' target='_blank'>GitHubissa</a>"))
+            
             ),
 
         mainPanel(
@@ -270,7 +274,7 @@ server <- function(input, output) {
 
     # party history graph
     output$history <- renderPlotly({
-        
+
         df <- as.data.frame(read.csv("data/vaaliarkisto.csv", dec = ".", check.names = F, encoding = "UTF-8"))
         
         df2 <- subset(df, type==input$vaalityyppi[1])
@@ -345,8 +349,8 @@ server <- function(input, output) {
         )
         
         label <- switch(input$resulttype,
-                        "Kannatus" = geom_label(aes(label=scales::percent(year, accuracy = 0.1, suffix=" %", scale=1)), size=5),
-                        "Paikat" = geom_label(aes(label=year), size=5, nudge_y = )
+                        "Kannatus" = geom_label(aes(label=scales::percent(year, accuracy = 0.01, suffix=" %", scale=1)), size=5),
+                        "Paikat" = geom_label(aes(label=year), size=5)
         )
         
         ggplot(newdf, aes(x=reorder(variable, year), y=year))+
