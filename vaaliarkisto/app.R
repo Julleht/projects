@@ -65,7 +65,7 @@ colours <- c("Sosialidemokraattinen Puolue" = sdpColor,
              "SPP" = "grey",
              "Kansanpuolue" = "grey",
              "Ruotsalainen Vasemmisto" = sfpColor,
-             "STPV" = "#BEBEBE",
+             "STPV" = "red",
              "KrTL" = "#BEBEBE"
 )
 
@@ -91,7 +91,7 @@ labs <- c("Sosialidemokraattinen Puolue" = "SDP",
           "TPSL" = "TPSL",
           "Suomen Kansanpuolue" = "KP",
           "Vapaamielisten Liitto" = "VL",
-          "Kansallinen Edistyspuolue" = "KE",
+          "Kansallinen Edistyspuolue" = "Ed.",
           "IKL" = "IKL",
           "IKL + Kok." = "IKL + Kok.",
           "PMP" = "PMP",
@@ -103,7 +103,7 @@ labs <- c("Sosialidemokraattinen Puolue" = "SDP",
           )
 
 # user interface
-ui <- fluidPage(
+ui <- fluidPage(theme="style.css",
 
     tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "style.css")),
     
@@ -230,7 +230,7 @@ ui <- fluidPage(
                          selected = c("graph")
                          ),
             
-            helpText(HTML("Avoin lähdekoodi <a href='https://github.com/Julleht/projects/tree/master/vaaliarkisto' target='_blank'>GitHubissa</a>"))
+            helpText(HTML("<a href='https://databyro.fi' target='_blank'>Databyro.fi</a><br>Avoin lähdekoodi <a href='https://github.com/Julleht/databyro/tree/master/shiny/vaaliarkisto' target='_blank'>GitHubissa</a>"))
             
             ),
 
@@ -303,13 +303,14 @@ server <- function(input, output) {
         )
         
         range <- switch(input$resulttype,
-                        "Kannatus" = list(ticksuffix = " %", title="", fixedrange=T),
+                        "Kannatus" = list(ticksuffix = " %", title="", range=c(0,40), fixedrange=T),
                         "Paikat" = list(title="", range=vaalit, fixedrange=T)
         )
     
         
         plot_ly(data=molten.df, mode="lines+markers", type="scatter", x = ~Vuosi, y = ~value, color= ~variable, colors=colours, text = ~variable, marker=list(size=8), height=650) %>%
-            layout(hovermode="closest", dragmode=F,
+            layout(hovermode="closest", dragmode=F, 
+                   annotations = list(text = "Databyro.fi", font = list(size = 16),showarrow = FALSE, xref = 'paper', x =1, yref = 'paper', y = 0.95),
                    margin = list(l=0, r=0, t= 0, b=0, pad=5),
                    showlegend = T,
                    title = list(text = "",
@@ -356,6 +357,7 @@ server <- function(input, output) {
         ggplot(newdf, aes(x=reorder(variable, year), y=year))+
             geom_col(aes(fill=variable), alpha=0.9)+
             label+
+            labs(caption="Databyro.fi")+
             xlab("")+
             ylab("")+
             scale+
