@@ -6,9 +6,9 @@ library(cowplot)
 library(sf)
 library(cartogram)
 
-kunta21 <- as.data.frame(read_excel("C:/Users/Julius/Setit/Databyro/excel ja R/excelit/kuntavaalit_helsinki.xlsx"))
+kunta21 <- as.data.frame(read_excel("kuntavaalit_helsinki.xlsx"))
 
-helsinki <- readOGR(dsn="C:/Users/Julius/Setit/Databyro/shp_fin/Helsinki", layer="Aanestysaluejako_PKS_2021", stringsAsFactors = FALSE)
+helsinki <- readOGR(dsn="Helsinki", layer="Aanestysaluejako_PKS_2021", stringsAsFactors = FALSE)
 helsinki <- subset(helsinki, kunta=="HELSINGIN KAUPUNKI")
 helsinki <- merge(helsinki, kunta21, by="nimi")
 helsinki <- st_as_sf(helsinki)
@@ -19,7 +19,7 @@ helsinki@data <- cbind(helsinki@data, rgeos::gCentroid(helsinki, byid = T) %>% c
 helsinkidf <- fortify(helsinki, region="nimi")
 helsinkidf <- merge(helsinkidf, kunta21, by="id")
 
-kunnat <- readOGR(dsn="C:/Users/Julius/Setit/Databyro/shp_fin/Helsinki", layer="PKS_Postinumeroalueet_manner_2019", stringsAsFactors = FALSE)
+kunnat <- readOGR(dsn="Helsinki", layer="PKS_Postinumeroalueet_manner_2019", stringsAsFactors = FALSE)
 kunnat <- subset(kunnat, Kunta=="Helsinki")
 kunnat <- st_as_sf(kunnat)
 kunnat <- st_transform(kunnat, crs=3857)
